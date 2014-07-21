@@ -1,0 +1,27 @@
+---
+- name: bootstrap box
+  user: root
+  hosts: localhost
+  connection: local
+  tasks:
+    - name: Create Instance
+      local_action:
+        module: digital_ocean
+        state: present
+        command: droplet
+        name: docker-2
+        size_id: 64
+        region_id: 4
+        image_id: 4970653
+        ssh_key_ids: 188399
+        wait: yes
+      register: my_droplet
+    - debug: msg="IP is {{ my_droplet.droplet.ip_address }}"
+    - name: Set DNS
+      local_action:
+        module: dnsimple
+        domain: attackzebras.com
+        record: docker-2
+        type: A
+        value: "{{ my_droplet.droplet.ip_address }}"
+        state: present

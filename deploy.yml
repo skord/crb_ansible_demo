@@ -1,0 +1,48 @@
+---
+- name: Install Python Tools
+  user: root
+  hosts: docker-2
+  roles:
+    - role: docker_python
+
+- name: Install Configure Accounts
+  user: root
+  hosts: docker-2
+  tasks:
+    - name: Deploy Group
+      group: name=deploy
+    - name: Deploy User
+      user: name=deploy group=deploy groups=docker append=true
+    - name: Install Deploy Key
+      authorized_key: user=deploy key="{{ lookup('file', '~/.ssh/crbdemo.pub') }}"
+
+- name: Deploy App
+  user: deploy
+  hosts: docker-2
+  tasks:
+    - name: Pull Docker Images
+      command: "docker pull skord/crb-demo-app:latest"
+    - name: Run PostgreSQL Container
+      docker:
+        image: "orchardup/postgresql"
+        name: "pg_host"
+        env: POSTGRESQL_USER=docker,POSTGRESQL_PASS=oe9jaacZLbR9pN,POSTGRESQL_DB=test
+    - name: DB Migrate
+      docker:
+        image: "skord/crb-demo-app:latest"
+        links: "pg_host:pg_host"
+        env: SECRET_KEY_BASE=14d630af6158da1d13d0e5f8c32221a7eaf9efb56c219ea07e3698eb979c48645e0fef5ef83f12af5c92c4088da2d7edea1093150c592e4c8934a2120b2649aa
+        command: "chpst -uapp bundle ./bin/rake db:migrate"
+    - name: Stop CRB Container
+      docker:
+        image: "skord/crb-demo-app:latest"
+        links: "pg_host:pg_host"
+        ports: 80:80
+        env: SECRET_KEY_BASE=14d630af6158da1d13d0e5f8c32221a7eaf9efb56c219ea07e3698eb979c48645e0fef5ef83f12af5c92c4088da2d7edea1093150c592e4c8934a2120b2649aa
+        state: stopped
+    - name: Start CRB Container
+      docker:
+        image: "skord/crb-demo-app:latest"
+        links: "pg_host:pg_host"
+        ports: 80:80
+        env: SECRET_KEY_BASE=14d630af6158da1d13d0e5f8c32221a7eaf9efb56c219ea07e3698eb979c48645e0fef5ef83f12af5c92c4088da2d7edea1093150c592e4c8934a2120b2649aa
