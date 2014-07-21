@@ -1,0 +1,14 @@
+- name: DNS
+  user: root
+  hosts: localhost
+  connection: local
+  gather_facts: no
+  tasks:
+    - name: set dns
+      local_action:
+        module: dnsimple
+        domain: attackzebras.com
+        record: docker-2
+        type: A
+        value: "104.131.242.175"
+        state: present:q
