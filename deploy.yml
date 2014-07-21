@@ -24,9 +24,9 @@
       command: "docker pull skord/crb-demo-app:latest"
     - name: Run PostgreSQL Container
       docker:
-        image: "orchardup/postgresql"
+        image: "paintedfox/postgresql"
         name: "pg_host"
-        env: POSTGRESQL_USER=docker,POSTGRESQL_PASS=oe9jaacZLbR9pN,POSTGRESQL_DB=test
+        env: USER=docker,PASS=oe9jaacZLbR9pN,DB=test
     - name: DB Migrate
       docker:
         image: "skord/crb-demo-app:latest"
