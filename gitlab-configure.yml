@@ -1,0 +1,9 @@
+---
+- name: Gitlab Configuration
+  user: root
+  hosts: gitlab
+  roles:
+    - role: docker_python
+    - role: gitlab
+    - role: gitlab_ci
+

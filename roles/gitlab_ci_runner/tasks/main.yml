@@ -1,0 +1,54 @@
+- name: Install Packages
+  apt: pkg={{ item }}
+  with_items:
+    - wget 
+    - curl 
+    - gcc 
+    - libxml2-dev 
+    - libxslt-dev 
+    - libcurl4-openssl-dev 
+    - libreadline6-dev 
+    - libc6-dev 
+    - libssl-dev 
+    - make 
+    - build-essential 
+    - zlib1g-dev 
+    - openssh-server 
+    - git-core 
+    - libyaml-dev 
+    - postfix 
+    - libpq-dev 
+    - libicu-dev
+- name: Add brightbox ruby repository
+  sudo: yes
+  apt_repository: repo='ppa:brightbox/ruby-ng' update_cache=yes
+- name: Install ruby
+  sudo: yes
+  apt: name={{ item }} state=latest
+  with_items:
+    - ruby2.1
+    - ruby2.1-dev
+- name: Install Bundler
+  gem: name=bundler state=latest
+- name: Create runner user
+  user: name=gitlab_ci_runner
+- name: Clone runner repo
+  git:
+    repo: https://gitlab.com/gitlab-org/gitlab-ci-runner.git
+    dest: /home/gitlab_ci_runner/gitlab-ci-runner
+- name: Bundle install deployment
+  command: bundle install --deployment
+  args:
+    chdir: /home/gitlab_ci_runner/gitlab-ci-runner
+- name: Chown to proper user
+  file: 
+    path: /home/gitlab_ci_runner/gitlab-ci-runner
+    owner: gitlab_ci_runner
+    group: gitlab_ci_runner
+    state: directory
+    recurse: yes
+- name: Register
+  shell: CI_SERVER_URL={{ ci_server_url }} REGISTRATION_TOKEN={{ ci_registration_token }} bundle exec ./bin/setup
+  args:
+    chdir: /home/gitlab_ci_runner/gitlab-ci-runner
+

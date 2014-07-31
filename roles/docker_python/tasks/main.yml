@@ -11,3 +11,5 @@
   pip: name="docker-py"
 - name: Install pycrypto
   pip: name="pycrypto"
+- name: Install python mysql
+  apt: pkg=python-mysqldb

@@ -1,0 +1,56 @@
+- name: Create MySQL data store
+  file: path=/opt/mysql/data state=directory
+- name: Install MySQL
+  docker:
+    image: sameersbn/mysql:latest
+    name: gitlab_mysql
+    volumes:
+      - /opt/mysql/data:/var/lib/mysql
+- name: Get MySQL IP
+  shell: docker inspect gitlab_mysql | grep IPAddres | awk -F'"' '{print $4}'
+  register: gitlab_mysql_ip
+- debug: msg={{gitlab_mysql_ip.stdout}}
+- name: Update .my.cnf
+  file: src=my.cnf dest=/root/.my.cnf owner=root mode=0600
+- name: Create MySQL DB
+  mysql_db:
+    login_host: "{{ gitlab_mysql_ip.stdout }}"
+    name: "{{ gitlab_mysql_database }}"
+    encoding: "{{ gitlab_mysql_encoding }}"
+    collation: "{{ gitlab_mysql_collation }}"
+- name: Create MySQL User
+  mysql_user:
+    login_host: "{{ gitlab_mysql_ip.stdout }}"
+    name: "{{ gitlab_mysql_user }}"
+    password: "{{ gitlab_mysql_password }}"
+    host: '%.%.%.%'
+    priv: gitlabhq_production.*:ALL
+- name: Install Redis
+  docker:
+    name: gitlab_redis
+    image: sameersbn/redis:latest
+
+- name: Create Gitlab Data store
+  file: path=/opt/gitlab/data state=directory
+# - name: App Setup
+#   shell: "docker run -t --rm -e DB_USER={{ gitlab_mysql_user }} -e DB_PASS={{ gitlab_mysql_password }} -e DB_NAME={{ gitlab_mysql_database }} -e GITLAB_HOST={{ do_ip_address }} -v /opt/gitlab/data:/home/git/data --link gitlab_mysql:mysql --link gitlab_redis:redisio sameersbn/gitlab:{{ gitlab_version }} app:rake gitlab:setup force=yes"
+#   ignore_errors: yes
+- name: Install Gitlab
+  docker:
+    name: gitlab
+    image: sameersbn/gitlab:{{ gitlab_version }}
+    env:
+      - "DB_USER={{ gitlab_mysql_user }}"
+      - "DB_PASS={{ gitlab_mysql_password }}"
+      - "DB_NAME={{ gitlab_mysql_database }}"
+      - "GITLAB_HOST={{ do_ip_address }}"
+      - "GITLAB_SSH_PORT={{ gitlab_ssh_port }}"
+    links:
+      - "gitlab_mysql:mysql"
+      - "gitlab_redis:redisio"
+    volumes:
+      - /opt/gitlab/data:/home/git/data
+    ports:
+      - 80:80
+      - 443:443
+      - "10022:22"

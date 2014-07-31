@@ -1,13 +1,13 @@
 ---
 - name: Install Python Tools
   user: root
-  hosts: docker-2
+  hosts: docker-1
   roles:
     - role: docker_python
 
 - name: Install Configure Accounts
   user: root
-  hosts: docker-2
+  hosts: docker-1
   tasks:
     - name: Deploy Group
       group: name=deploy
@@ -18,7 +18,7 @@
 
 - name: Deploy App
   user: deploy
-  hosts: docker-2
+  hosts: docker-1
   tasks:
     - name: Pull Docker Images
       command: "docker pull skord/crb-demo-app:latest"

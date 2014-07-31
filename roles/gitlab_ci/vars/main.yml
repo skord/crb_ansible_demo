@@ -1,0 +1,12 @@
+gitlab_url: http://104.131.223.230
+gitlab_ci_version: 5.0.1
+gitlab_ci_mysql_path: /opt/gitlab_ci/mysql
+gitlab_ci_data_path: /opt/gitlab_ci/data
+gitlab_ci_mysql_login_user: root
+gitlab_ci_mysql_user: gitlab_ci
+gitlab_ci_mysql_database: gitlab_ci_production
+gitlab_ci_mysql_password: password
+gitlab_ci_mysql_encoding: utf8
+gitlab_ci_mysql_collation: utf8_unicode_ci
+
+

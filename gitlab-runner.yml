@@ -1,0 +1,8 @@
+---
+- name: Gitlab Runner Configuration
+  user: root
+  hosts: runner
+  roles:
+    # - role: docker_python
+    - role: gitlab_ci_runner
+

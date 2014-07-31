@@ -1,0 +1,64 @@
+- name: Create MySQL data store
+  file: path={{ gitlab_ci_mysql_path }} state=directory
+
+- name: Install MySQL
+  docker:
+    image: sameersbn/mysql:latest
+    name: gitlab_ci_mysql
+    volumes:
+      - "{{ gitlab_ci_mysql_path }}:/var/lib/mysql"
+
+- name: Get MySQL IP
+  shell: docker inspect gitlab_ci_mysql | grep IPAddres | awk -F'"' '{print $4}'
+  register: gitlab_ci_mysql_ip
+
+- debug: msg={{gitlab_ci_mysql_ip.stdout}}
+
+- name: Update .my.cnf
+  file: src=my.cnf dest=/root/.my.cnf owner=root mode=0600
+
+- name: Create MySQL DB
+  mysql_db:
+    login_host: "{{ gitlab_ci_mysql_ip.stdout }}"
+    name: "{{ gitlab_ci_mysql_database }}"
+    encoding: "{{ gitlab_ci_mysql_encoding }}"
+    collation: "{{ gitlab_ci_mysql_collation }}"
+
+- name: Create MySQL User
+  mysql_user:
+    login_host: "{{ gitlab_ci_mysql_ip.stdout }}"
+    name: "{{ gitlab_ci_mysql_user }}"
+    password: "{{ gitlab_ci_mysql_password }}"
+    host: '%.%.%.%'
+    priv: "{{ gitlab_ci_mysql_database }}.*:ALL"
+
+- name: Install Redis
+  docker:
+    name: gitlab_ci_redis
+    image: sameersbn/redis:latest
+
+- name: Create Gitlab CI Data store
+  file: path={{ gitlab_ci_data_path }} state=directory
+
+- name: App Setup
+  shell: "docker run -t --rm -e DB_USER={{ gitlab_ci_mysql_user }} -e DB_PASS={{ gitlab_ci_mysql_password }} -e DB_NAME={{ gitlab_ci_mysql_database }} -e GITLAB_CI_HOST={{ do_ip_address }} -v {{ gitlab_ci_data_path }}:/home/gitlab_ci/data --link gitlab_ci_mysql:mysql --link gitlab_ci_redis:redisio sameersbn/gitlab-ci:{{ gitlab_ci_version }} app:rake db:setup"
+  ignore_errors: yes
+
+- name: Install Gitlab CI
+  docker:
+    name: gitlab_ci
+    image: sameersbn/gitlab-ci:{{ gitlab_ci_version }}
+    env:
+      - "DB_USER={{ gitlab_ci_mysql_user }}"
+      - "DB_PASS={{ gitlab_ci_mysql_password }}"
+      - "DB_NAME={{ gitlab_ci_mysql_database }}"
+      - "GITLAB_CI_HOST={{ do_ip_address }}"
+      - "GITLAB_URL={{ gitlab_url }}"
+    links:
+      - "gitlab_ci_mysql:mysql"
+      - "gitlab_ci_redis:redisio"
+    volumes:
+      - "{{ gitlab_ci_data_path}}:/home/gitlab_ci/data"
+    ports:
+      - 10080:80
+      - 10443:443

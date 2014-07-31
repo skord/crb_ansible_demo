@@ -1,0 +1,9 @@
+gitlab_version: 7.1.0
+gitlab_mysql_login_user: root
+gitlab_mysql_user: gitlab
+gitlab_mysql_database: gitlabhq_production
+gitlab_mysql_password: password
+gitlab_mysql_encoding: utf8
+gitlab_mysql_collation: utf8_unicode_ci
+gitlab_ssh_port: 10022
+
